@@ -1,0 +1,823 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="cyber">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>TimeWise | Gamified Teen AI Schedule & Productivity App</title>
+  <meta name="description" content="TimeWise is a vibrant, gamified daily scheduler for teenagers that builds habits, generates optimized AI timetables, and unlocks mini-games when work is done.">
+  
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800;900&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  
+  <!-- App Styles -->
+  <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+  <div id="app" class="app-container">
+    
+    <!-- Canvas for Confetti -->
+    <canvas id="confetti-canvas"></canvas>
+
+    <!-- AUTH MODAL SYSTEM -->
+    <div id="auth-modal" class="modal-overlay active">
+      <div class="modal-card auth-card glass-panel animate-pop">
+        <div class="auth-header">
+          <div class="logo-badge">
+            <span class="logo-icon">⚡</span>
+            <span class="logo-text">Time<span class="highlight">Wise</span></span>
+          </div>
+          <h2>Level Up Your Time 🚀</h2>
+          <p>The ultimate daily scheduler built for teens!</p>
+        </div>
+
+        <!-- Auth Tabs -->
+        <div class="auth-tabs">
+          <button class="auth-tab-btn active" data-tab="signup">Sign Up</button>
+          <button class="auth-tab-btn" data-tab="login">Log In</button>
+          <button class="auth-tab-btn" data-tab="guest">Guest Mode</button>
+        </div>
+
+        <!-- Form: Sign Up -->
+        <form id="signup-form" class="auth-form active">
+          <div class="form-group">
+            <label for="su-name">Full Name</label>
+            <input type="text" id="su-name" placeholder="e.g. Alex Rivera" required>
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label for="su-age">Age</label>
+              <input type="number" id="su-age" min="12" max="19" value="15" required>
+            </div>
+            <div class="form-group">
+              <label for="su-grade">Grade / Year</label>
+              <select id="su-grade">
+                <option value="8th Grade">8th Grade</option>
+                <option value="9th Grade" selected>9th Grade (Freshman)</option>
+                <option value="10th Grade">10th Grade (Sophomore)</option>
+                <option value="11th Grade">11th Grade (Junior)</option>
+                <option value="12th Grade">12th Grade (Senior)</option>
+                <option value="College">College / Univ</option>
+              </select>
+            </div>
+          </div>
+          <div class="form-group">
+            <label>Choose Avatar</label>
+            <div class="avatar-selector" id="su-avatar-list">
+              <!-- Rendered via JS -->
+            </div>
+          </div>
+          <button type="submit" class="btn btn-primary btn-block">Create Account & Start 🚀</button>
+        </form>
+
+        <!-- Form: Login -->
+        <form id="login-form" class="auth-form">
+          <div class="form-group">
+            <label for="li-email">Name or Username</label>
+            <input type="text" id="li-email" placeholder="Enter your name" required>
+          </div>
+          <button type="submit" class="btn btn-primary btn-block">Welcome Back! 👋</button>
+          <div class="form-footer">
+            <a href="#" id="forgot-pass-btn">Forgot password?</a>
+          </div>
+        </form>
+
+        <!-- Guest Mode -->
+        <div id="guest-form" class="auth-form">
+          <p class="guest-desc">Jump straight into TimeWise with pre-loaded sample tasks, schedule preview, and instant gamification rewards!</p>
+          <button type="button" id="start-guest-btn" class="btn btn-secondary btn-block">Explore in Guest Mode ✨</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- MAIN APP STRUCTURE -->
+    <div id="main-layout" class="main-layout hidden">
+      
+      <!-- TOP NAVIGATION BAR -->
+      <header class="top-nav glass-panel">
+        <div class="nav-left">
+          <div class="logo">
+            <span class="logo-icon">⚡</span>
+            <span class="logo-title">Time<span class="highlight">Wise</span></span>
+          </div>
+        </div>
+
+        <div class="nav-stats">
+          <div class="stat-pill streak-pill" title="Daily Streak">
+            <span class="pill-icon">🔥</span>
+            <span class="pill-val" id="user-streak-val">3</span>
+            <span class="pill-lbl">Days</span>
+          </div>
+          <div class="stat-pill xp-pill" title="Experience Points">
+            <span class="pill-icon">⚡</span>
+            <span class="pill-val" id="user-xp-val">450</span>
+            <span class="pill-lbl">XP</span>
+          </div>
+          <div class="stat-pill coin-pill" title="Coins Earned">
+            <span class="pill-icon">🪙</span>
+            <span class="pill-val" id="user-coins-val">120</span>
+          </div>
+          <div class="stat-pill level-pill" title="User Level">
+            <span class="pill-icon">🏆</span>
+            <span class="pill-lbl">Lvl</span>
+            <span class="pill-val" id="user-level-val">4</span>
+          </div>
+        </div>
+
+        <div class="nav-right">
+          <button id="wisebot-trigger-btn" class="btn-icon-btn glow-btn" title="WiseBot AI Coach & Pomodoro">
+            🤖 <span class="badge-dot"></span>
+          </button>
+          <div class="user-avatar-btn" id="header-avatar" title="Open Profile">
+            <span id="header-avatar-emoji">🦊</span>
+          </div>
+        </div>
+      </header>
+
+      <!-- NAVIGATION TABS -->
+      <nav class="sub-nav glass-panel">
+        <button class="nav-tab active" data-target="tab-dashboard">
+          <span class="tab-icon">🏠</span> Dashboard
+        </button>
+        <button class="nav-tab" data-target="tab-planner">
+          <span class="tab-icon">📝</span> Daily Planner
+        </button>
+        <button class="nav-tab" data-target="tab-timeline">
+          <span class="tab-icon">📅</span> Timeline & AI
+        </button>
+        <button class="nav-tab" data-target="tab-games" id="games-nav-tab">
+          <span class="tab-icon" id="games-nav-icon">🔒</span> Games Hub
+        </button>
+        <button class="nav-tab" data-target="tab-analytics">
+          <span class="tab-icon">📊</span> Analytics
+        </button>
+        <button class="nav-tab" data-target="tab-calendar">
+          <span class="tab-icon">📆</span> Calendar
+        </button>
+        <button class="nav-tab" data-target="tab-shop">
+          <span class="tab-icon">🛍️</span> Rewards Shop
+        </button>
+        <button class="nav-tab" data-target="tab-settings">
+          <span class="tab-icon">⚙️</span> Settings
+        </button>
+      </nav>
+
+      <!-- MAIN CONTENT PAGES -->
+      <main class="content-area">
+        
+        <!-- PAGE 1: DASHBOARD -->
+        <section id="tab-dashboard" class="app-page active">
+          <div class="hero-banner glass-panel">
+            <div class="hero-text">
+              <h1 id="greeting-heading">Good Morning, Alex 👋</h1>
+              <div class="hero-subinfo">
+                <span id="live-date">Tuesday, Jul 21, 2026</span> • <span id="live-clock">08:00 AM</span>
+              </div>
+              <p class="quote-text" id="daily-quote">"Focus on being productive instead of busy."</p>
+            </div>
+            <div class="hero-actions">
+              <button class="btn btn-accent btn-lg glow-effect" id="dash-gen-btn">
+                ✨ Generate AI Schedule
+              </button>
+              <button class="btn btn-secondary btn-lg" id="dash-add-btn">
+                ➕ Quick Add Task
+              </button>
+            </div>
+          </div>
+
+          <div class="dash-grid">
+            <!-- Progress Ring Card -->
+            <div class="dash-card glass-panel ring-card">
+              <h3>Today's Progress</h3>
+              <div class="ring-container">
+                <svg class="progress-ring" width="160" height="160">
+                  <circle class="ring-bg" cx="80" cy="80" r="65"></circle>
+                  <circle class="ring-fill" id="dash-progress-ring" cx="80" cy="80" r="65"></circle>
+                </svg>
+                <div class="ring-center">
+                  <span class="ring-percentage" id="dash-progress-pct">0%</span>
+                  <span class="ring-subtext">Completed</span>
+                </div>
+              </div>
+              <div class="ring-stats">
+                <div><strong id="dash-tasks-done">0</strong> Completed</div>
+                <div><strong id="dash-tasks-left">0</strong> Remaining</div>
+              </div>
+            </div>
+
+            <!-- Productivity Score Card -->
+            <div class="dash-card glass-panel score-card">
+              <h3>Productivity Score</h3>
+              <div class="score-display">
+                <span class="score-number" id="dash-prod-score">88</span>
+                <span class="score-label">Supercharged ⚡</span>
+              </div>
+              <div class="score-bar">
+                <div class="score-fill" id="dash-prod-bar" style="width: 88%;"></div>
+              </div>
+              <p class="score-hint">Complete 2 more study tasks to unlock maximum streak bonus!</p>
+            </div>
+
+            <!-- Upcoming Task Widget -->
+            <div class="dash-card glass-panel upcoming-card">
+              <div class="card-header">
+                <h3>Current & Upcoming</h3>
+                <span class="badge badge-neon" id="upcoming-status-badge">Next Up</span>
+              </div>
+              <div id="upcoming-task-box" class="task-box-inner">
+                <div class="empty-state">No upcoming tasks scheduled yet! Click "Generate AI Schedule" to build your day.</div>
+              </div>
+            </div>
+
+            <!-- Game Unlock Banner Preview -->
+            <div class="dash-card glass-panel game-preview-card" id="dash-game-banner">
+              <div class="game-banner-content">
+                <div class="banner-icon" id="dash-lock-icon">🔒</div>
+                <div class="banner-text">
+                  <h4 id="dash-lock-title">Games Section Locked</h4>
+                  <p id="dash-lock-desc">Complete all scheduled tasks for today to unlock your game rewards!</p>
+                  <div class="mini-progress-bar">
+                    <div class="mini-fill" id="dash-lock-fill" style="width: 0%;"></div>
+                  </div>
+                </div>
+                <button class="btn btn-outline" id="dash-unlock-goto-btn">View Games</button>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- PAGE 2: DAILY PLANNER -->
+        <section id="tab-planner" class="app-page">
+          <div class="page-header glass-panel">
+            <div>
+              <h2>Daily Task Planner 📝</h2>
+              <p>What are your plans today? Add your homework, classes, sports, and hobbies!</p>
+            </div>
+            <div class="header-btns">
+              <button class="btn btn-secondary" id="preset-load-btn">💡 Load Sample Teen Schedule</button>
+              <button class="btn btn-primary" id="open-add-task-modal">➕ Add New Task</button>
+            </div>
+          </div>
+
+          <div class="planner-layout">
+            <!-- Left Side: NLP Command Center -->
+            <div class="nlp-panel glass-panel">
+              <h3>🤖 AI Quick Day Planner</h3>
+              <p class="panel-desc">Describe your day naturally (school hours, homework needs, sports practice, and sleep times).</p>
+              
+              <div class="form-group" style="margin-top: 12px;">
+                <textarea id="nlp-input-text" rows="4" placeholder="e.g. Tomorrow I have school from 8 to 3, football from 5 to 6, I need 2 hours of homework, 45 minutes of maths revision and I want 1 hour of gaming. I want to sleep by 10:30."></textarea>
+              </div>
+              
+              <div class="nlp-suggestions">
+                <span class="suggestion-tag" data-text="Tomorrow I have school from 8 to 3, coding class from 4:30 to 6. I need 1 hour of homework, 30 minutes of science revision and want to sleep at 10 PM.">🏫 School & Tuition</span>
+                <span class="suggestion-tag" data-text="Woke up late at 9:30 AM. Available for 6 hours today. I need 2 hours of coding practice, 1.5 hours of physics report, football from 5 to 6:30. Prioritize coding.">🏃 Late Weekend Study</span>
+                <span class="suggestion-tag" data-text="I have school from 8:30 to 3. I want 1 hour of gaming, 30 mins of music. I need 1 hour of math revision and 45 mins chemistry project. Focus on math.">🎮 Study & Gaming</span>
+              </div>
+              
+              <button class="btn btn-accent btn-block" id="nlp-parse-btn" style="margin-top: 15px;">✨ Generate AI Schedule from Text</button>
+            </div>
+
+            <!-- Right Side: Task Bucket -->
+            <div class="planner-panel glass-panel">
+              <div class="panel-top">
+                <h3>Task Bucket (<span id="planner-task-count">0</span>)</h3>
+                <button class="btn btn-accent btn-sm" id="planner-generate-ai">🤖 Generate AI Timetable</button>
+              </div>
+              <div class="task-category-filter">
+                <button class="cat-chip active" data-cat="ALL">All</button>
+                <button class="cat-chip" data-cat="School">🏫 School</button>
+                <button class="cat-chip" data-cat="Homework">📚 Homework</button>
+                <button class="cat-chip" data-cat="Sports">⚽ Sports</button>
+                <button class="cat-chip" data-cat="Coding">💻 Coding</button>
+                <button class="cat-chip" data-cat="Gaming">🎮 Gaming</button>
+                <button class="cat-chip" data-cat="Relax">🛋️ Relax</button>
+              </div>
+              <div id="planner-task-list" class="task-cards-list">
+                <!-- Task Cards Rendered via JS -->
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- PAGE 3: TIMELINE & AI GENERATOR -->
+        <section id="tab-timeline" class="app-page">
+          <div class="page-header glass-panel">
+            <div>
+              <h2>Interactive Schedule Timeline 📅</h2>
+              <p>AI-organized daily timeline. Drag & drop to rearrange or edit tasks live!</p>
+            </div>
+            <div class="header-btns">
+              <button class="btn btn-accent glow-btn" id="timeline-recalc-btn">
+                🔄 Auto-Recalculate Schedule
+              </button>
+              <button class="btn btn-primary" id="timeline-regen-btn">
+                ✨ Regenerate Day
+              </button>
+            </div>
+          </div>
+
+          <div class="timeline-container glass-panel">
+            <div class="timeline-meta">
+              <div class="meta-item">
+                <span>Start Time:</span> <strong>07:00 AM</strong>
+              </div>
+              <div class="meta-item">
+                <span>Total Tasks:</span> <strong id="timeline-count">0</strong>
+              </div>
+              <div class="meta-item">
+                <span>Study/Work Time:</span> <strong id="timeline-study-time">0 hrs</strong>
+              </div>
+              <div class="meta-item">
+                <span>Breaks & Meal Time:</span> <strong id="timeline-break-time">0 hrs</strong>
+              </div>
+            </div>
+
+            <!-- TIMELINE LIST -->
+            <div id="timeline-cards-wrapper" class="timeline-cards-wrapper">
+              <!-- Generated timeline cards populated by JS -->
+            </div>
+          </div>
+        </section>
+
+        <!-- PAGE 4: GAMES HUB (LOCKED/UNLOCKED SYSTEM) -->
+        <section id="tab-games" class="app-page">
+          <!-- Lock Overlay -->
+          <div id="games-lock-overlay" class="lock-overlay active">
+            <div class="lock-card glass-panel animate-bounce">
+              <div class="big-lock-icon">🔒</div>
+              <h2>Finish Today's Tasks To Unlock Your Rewards!</h2>
+              <p>Work hard first, play later! Complete all scheduled tasks for today to unlock 8 awesome mini-games.</p>
+              
+              <div class="lock-progress-box">
+                <div class="lock-progress-info">
+                  <span>Task Completion:</span>
+                  <strong id="lock-pct-text">0%</strong>
+                </div>
+                <div class="progress-bar-lg">
+                  <div class="bar-fill" id="lock-bar-fill" style="width: 0%;"></div>
+                </div>
+              </div>
+
+              <div class="lock-actions">
+                <button class="btn btn-accent btn-lg" id="goto-tasks-btn">🚀 Go Complete Tasks</button>
+                <button class="btn btn-secondary btn-sm" id="dev-bypass-btn" title="For testing purposes">⚡ Dev Instant Unlock</button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Unlocked Content -->
+          <div id="games-content" class="games-content hidden">
+            <div class="page-header glass-panel">
+              <div>
+                <h2>🎉 Arcade & Mini Games Unlocked!</h2>
+                <p>Great job completing all your responsibilities! Take a 15-minute brain break.</p>
+              </div>
+              <div class="coin-badge-display">
+                <span>Total Coins: 🪙 <strong id="games-coins-display">120</strong></span>
+              </div>
+            </div>
+
+            <div class="games-grid">
+              <!-- Game Card 1: Snake -->
+              <div class="game-card glass-panel" data-game="snake">
+                <div class="game-thumb">🐍</div>
+                <h3>Classic Snake</h3>
+                <p>Navigate, eat food, and build your high score!</p>
+                <div class="game-meta">High Score: <span id="hs-snake">0</span></div>
+                <button class="btn btn-primary btn-block play-game-btn" data-game="snake">Play Snake 🎮</button>
+              </div>
+
+              <!-- Game Card 2: 2048 -->
+              <div class="game-card glass-panel" data-game="2048">
+                <div class="game-thumb">🧩</div>
+                <h3>2048 Puzzle</h3>
+                <p>Combine matching numbers to reach the legendary 2048 tile!</p>
+                <div class="game-meta">High Score: <span id="hs-2048">0</span></div>
+                <button class="btn btn-primary btn-block play-game-btn" data-game="2048">Play 2048 🎮</button>
+              </div>
+
+              <!-- Game Card 3: Memory Match -->
+              <div class="game-card glass-panel" data-game="memory">
+                <div class="game-thumb">🎴</div>
+                <h3>Memory Flip</h3>
+                <p>Test your focus and memory by matching emoji pairs!</p>
+                <div class="game-meta">Best Time: <span id="hs-memory">--</span></div>
+                <button class="btn btn-primary btn-block play-game-btn" data-game="memory">Play Memory 🎮</button>
+              </div>
+
+              <!-- Game Card 4: Tic Tac Toe -->
+              <div class="game-card glass-panel" data-game="tictactoe">
+                <div class="game-thumb">❌⭕</div>
+                <h3>Tic Tac Toe AI</h3>
+                <p>Challenge Smart AI or play with a friend locally!</p>
+                <div class="game-meta">Wins: <span id="hs-ttt">0</span></div>
+                <button class="btn btn-primary btn-block play-game-btn" data-game="tictactoe">Play Tic-Tac-Toe 🎮</button>
+              </div>
+
+              <!-- Game Card 5: Color Match -->
+              <div class="game-card glass-panel" data-game="colormatch">
+                <div class="game-thumb">🎨</div>
+                <h3>Color Reflex</h3>
+                <p>Stroop test: match text meaning vs text color rapidly!</p>
+                <div class="game-meta">High Streak: <span id="hs-color">0</span></div>
+                <button class="btn btn-primary btn-block play-game-btn" data-game="colormatch">Play Color Match 🎮</button>
+              </div>
+
+              <!-- Game Card 6: Word Puzzle -->
+              <div class="game-card glass-panel" data-game="wordle">
+                <div class="game-thumb">🔤</div>
+                <h3>Word Master</h3>
+                <p>Guess the hidden 5-letter productivity word in 6 tries!</p>
+                <div class="game-meta">Streak: <span id="hs-wordle">0</span></div>
+                <button class="btn btn-primary btn-block play-game-btn" data-game="wordle">Play Word Master 🎮</button>
+              </div>
+
+              <!-- Game Card 7: Reaction Test -->
+              <div class="game-card glass-panel" data-game="reaction">
+                <div class="game-thumb">⚡</div>
+                <h3>Reaction Speed</h3>
+                <p>How fast can you click when the screen turns green?</p>
+                <div class="game-meta">Best: <span id="hs-reaction">-- ms</span></div>
+                <button class="btn btn-primary btn-block play-game-btn" data-game="reaction">Test Reaction 🎮</button>
+              </div>
+
+              <!-- Game Card 8: Math Challenge -->
+              <div class="game-card glass-panel" data-game="math">
+                <div class="game-thumb">➕</div>
+                <h3>Math Blitz</h3>
+                <p>Solve rapid mental arithmetic questions before time runs out!</p>
+                <div class="game-meta">High Score: <span id="hs-math">0</span></div>
+                <button class="btn btn-primary btn-block play-game-btn" data-game="math">Play Math Blitz 🎮</button>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- PAGE 5: ANALYTICS -->
+        <section id="tab-analytics" class="app-page">
+          <div class="page-header glass-panel">
+            <div>
+              <h2>Productivity Analytics 📊</h2>
+              <p>Track your study hours, break balance, focus streaks, and weekly trends.</p>
+            </div>
+          </div>
+
+          <div class="analytics-grid">
+            <div class="analytics-card glass-panel">
+              <h3>Focus vs Break Ratio</h3>
+              <div class="chart-container" id="chart-focus-ratio">
+                <!-- SVG Chart Rendered via JS -->
+              </div>
+            </div>
+
+            <div class="analytics-card glass-panel">
+              <h3>Weekly Task Completion</h3>
+              <div class="chart-container" id="chart-weekly-bar">
+                <!-- SVG Chart Rendered via JS -->
+              </div>
+            </div>
+
+            <div class="analytics-card glass-panel">
+              <h3>Productivity Streaks</h3>
+              <div class="streak-stats-row">
+                <div class="stat-box">
+                  <span class="sb-val" id="an-curr-streak">3</span>
+                  <span class="sb-lbl">Current Streak (Days)</span>
+                </div>
+                <div class="stat-box">
+                  <span class="sb-val" id="an-best-streak">7</span>
+                  <span class="sb-lbl">Longest Streak</span>
+                </div>
+                <div class="stat-box">
+                  <span class="sb-val" id="an-best-day">Wednesday</span>
+                  <span class="sb-lbl">Most Productive Day</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Achievements Box -->
+            <div class="analytics-card glass-panel achievements-card" style="grid-column: 1 / -1;">
+              <h3>🏆 Badges & Achievements</h3>
+              <div class="badges-grid" id="analytics-badges-grid" style="margin-top: 15px;">
+                <!-- Badges populated via JS -->
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- PAGE 6: CALENDAR -->
+        <section id="tab-calendar" class="app-page">
+          <div class="page-header glass-panel">
+            <div>
+              <h2>Monthly Calendar 📆</h2>
+              <p>Review past day schedules, track monthly streaks, and copy schedules.</p>
+            </div>
+            <button class="btn btn-secondary" id="cal-copy-prev">📋 Copy Yesterday's Schedule</button>
+          </div>
+
+          <div class="calendar-container glass-panel">
+            <div class="calendar-header-nav">
+              <button class="btn btn-sm btn-icon" id="cal-prev-month">◀</button>
+              <h3 id="cal-month-title">July 2026</h3>
+              <button class="btn btn-sm btn-icon" id="cal-next-month">▶</button>
+            </div>
+            <div class="calendar-grid-header">
+              <span>Sun</span><span>Mon</span><span>Tue</span><span>Wed</span><span>Thu</span><span>Fri</span><span>Sat</span>
+            </div>
+            <div class="calendar-days-grid" id="calendar-days-grid">
+              <!-- Days populated via JS -->
+            </div>
+          </div>
+        </section>
+
+        <!-- PAGE 7: REWARDS SHOP -->
+        <section id="tab-shop" class="app-page">
+          <div class="page-header glass-panel">
+            <div>
+              <h2>Rewards & Avatar Shop 🛍️</h2>
+              <p>Spend your hard-earned Coins on exclusive teen avatars, frames, and themes!</p>
+            </div>
+            <div class="shop-balance">
+              <span>Coins Available: 🪙 <strong id="shop-coins-display">120</strong></span>
+            </div>
+          </div>
+
+          <div class="shop-grid" id="shop-items-grid">
+            <!-- Items rendered via JS -->
+          </div>
+        </section>
+
+        <!-- PAGE 8: SETTINGS -->
+        <section id="tab-settings" class="app-page">
+          <div class="page-header glass-panel">
+            <div>
+              <h2>Settings & Customization ⚙️</h2>
+              <p>Customize themes, audio feedback, user profile, and data options.</p>
+            </div>
+          </div>
+
+          <div class="settings-grid glass-panel">
+            <div class="setting-item">
+              <div class="setting-info">
+                <h4>App Theme</h4>
+                <p>Choose your favorite vibe</p>
+              </div>
+              <select id="theme-selector" class="form-select">
+                <option value="cyber">⚡ Cyber Neon</option>
+                <option value="sunset">🌅 Sunset Glow</option>
+                <option value="emerald">🌿 Emerald Fresh</option>
+                <option value="dark">🌙 Dark Mode</option>
+                <option value="light">☀️ Light Mode</option>
+              </select>
+            </div>
+
+            <div class="setting-item">
+              <div class="setting-info">
+                <h4>Sound Effects (SFX)</h4>
+                <p>Play satisfying audio chimes on task complete & rewards</p>
+              </div>
+              <label class="switch">
+                <input type="checkbox" id="sfx-toggle" checked>
+                <span class="slider round"></span>
+              </label>
+            </div>
+
+            <div class="setting-item">
+              <div class="setting-info">
+                <h4>Smart Nudge Notifications</h4>
+                <p>Receive periodic encouragement & break reminders</p>
+              </div>
+              <label class="switch">
+                <input type="checkbox" id="nudge-toggle" checked>
+                <span class="slider round"></span>
+              </label>
+            </div>
+
+            <div class="setting-item">
+              <div class="setting-info">
+                <h4>Export / Reset Data</h4>
+                <p>Download your progress or clear local data</p>
+              </div>
+              <div class="setting-btns">
+                <button class="btn btn-secondary btn-sm" id="export-data-btn">💾 Export Data (JSON)</button>
+                <button class="btn btn-danger btn-sm" id="reset-data-btn">⚠️ Reset All Data</button>
+              </div>
+            </div>
+          </div>
+        </section>
+
+      </main>
+    </div>
+
+    <!-- MODAL: ADD / EDIT TASK -->
+    <div id="task-modal" class="modal-overlay">
+      <div class="modal-card glass-panel animate-pop">
+        <div class="modal-header">
+          <h3 id="task-modal-title">➕ Create New Task</h3>
+          <button class="close-modal-btn" id="close-task-modal">&times;</button>
+        </div>
+
+        <form id="task-form">
+          <input type="hidden" id="task-edit-id">
+          
+          <div class="form-group">
+            <label for="task-title">Task Title</label>
+            <input type="text" id="task-title" placeholder="e.g. Finish Math Chapter 4 Homework" required>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label for="task-category">Category</label>
+              <select id="task-category">
+                <option value="School">🏫 School</option>
+                <option value="Homework" selected>📚 Homework</option>
+                <option value="Tuition">✍️ Tuition</option>
+                <option value="Projects">🧪 Projects</option>
+                <option value="Sports">⚽ Sports</option>
+                <option value="Exercise">🏃 Exercise</option>
+                <option value="Reading">📖 Reading</option>
+                <option value="Coding">💻 Coding</option>
+                <option value="Music">🎵 Music</option>
+                <option value="Dance">💃 Dance</option>
+                <option value="Family Time">👨‍👩‍👧 Family Time</option>
+                <option value="Meals">🍽️ Meals</option>
+                <option value="Relax">🛋️ Relax</option>
+                <option value="Gaming">🎮 Gaming</option>
+                <option value="Custom">✨ Custom</option>
+              </select>
+            </div>
+
+            <div class="form-group">
+              <label for="task-priority">Priority</label>
+              <select id="task-priority">
+                <option value="Low">🟢 Low</option>
+                <option value="Medium" selected>🟡 Medium</option>
+                <option value="High">🔴 High</option>
+                <option value="Urgent">🔥 Urgent</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label for="task-duration">Duration (Minutes)</label>
+              <input type="number" id="task-duration" min="10" max="240" step="5" value="45" required>
+            </div>
+
+            <div class="form-group">
+              <label for="task-preferred-time">Preferred Time</label>
+              <input type="time" id="task-preferred-time" value="16:00">
+            </div>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label for="task-difficulty">Difficulty</label>
+              <select id="task-difficulty">
+                <option value="Easy">⭐ Easy (+10 XP)</option>
+                <option value="Medium" selected>⭐⭐ Medium (+25 XP)</option>
+                <option value="Hard">⭐⭐⭐ Hard (+50 XP)</option>
+              </select>
+            </div>
+
+            <div class="form-group">
+              <label for="task-color">Card Accent Color</label>
+              <input type="color" id="task-color" value="#8b5cf6">
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label for="task-notes">Notes / Steps</label>
+            <textarea id="task-notes" rows="2" placeholder="e.g. Exercise 1 to 15, double check formulas"></textarea>
+          </div>
+
+          <button type="submit" class="btn btn-primary btn-block">Save Task ✨</button>
+        </form>
+      </div>
+    </div>
+
+    <!-- MODAL: WISEBOT AI COACH & POMODORO TIMER -->
+    <div id="wisebot-modal" class="modal-overlay">
+      <div class="modal-card wisebot-card glass-panel animate-pop">
+        <div class="modal-header">
+          <div class="bot-info">
+            <span class="bot-avatar">🤖</span>
+            <div>
+              <h3>WiseBot AI Coach & Focus Studio</h3>
+              <p>Your personal productivity assistant</p>
+            </div>
+          </div>
+          <button class="close-modal-btn" id="close-wisebot-modal">&times;</button>
+        </div>
+
+        <div class="wisebot-tabs">
+          <button class="wb-tab-btn active" data-wbtab="chat">🤖 AI Chat Coach</button>
+          <button class="wb-tab-btn" data-wbtab="pomodoro">⏱️ Pomodoro Focus Timer</button>
+        </div>
+
+        <!-- TAB 1: CHAT -->
+        <div id="wb-tab-chat" class="wb-tab-content active">
+          <div class="chat-messages-box" id="chat-messages-box">
+            <div class="chat-msg bot-msg">
+              <div class="msg-bubble">
+                Hey there! 👋 I'm <strong>WiseBot</strong>, your AI productivity coach. Need help prioritizing your homework, staying motivated, or planning breaks? Ask me anything!
+              </div>
+            </div>
+          </div>
+          <div class="chat-input-row">
+            <input type="text" id="chat-input" placeholder="Type a message (e.g. 'How can I stay focused on Math?')...">
+            <button class="btn btn-primary" id="chat-send-btn">Send 🚀</button>
+          </div>
+        </div>
+
+        <!-- TAB 2: POMODORO -->
+        <div id="wb-tab-pomodoro" class="wb-tab-content">
+          <div class="pomo-display">
+            <div class="pomo-time" id="pomo-timer-display">25:00</div>
+            <div class="pomo-mode-label" id="pomo-mode-label">Study Focus Session</div>
+            
+            <div class="pomo-controls">
+              <button class="btn btn-primary btn-lg" id="pomo-start-btn">▶️ Start Focus</button>
+              <button class="btn btn-secondary btn-lg" id="pomo-pause-btn">⏸️ Pause</button>
+              <button class="btn btn-outline" id="pomo-reset-btn">🔄 Reset</button>
+            </div>
+
+            <div class="pomo-ambient-controls">
+              <h4>🎧 Lo-Fi Ambient Sound Synth</h4>
+              <div class="ambient-btns">
+                <button class="ambient-btn active" data-sound="none">🔇 Off</button>
+                <button class="ambient-btn" data-sound="lofi">🎶 Lo-Fi Beats</button>
+                <button class="ambient-btn" data-sound="rain">🌧️ Rain Noise</button>
+                <button class="ambient-btn" data-sound="cafe">☕ Cafe Ambient</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- MODAL: MINI GAME DISPLAY CONTAINER -->
+    <div id="game-modal" class="modal-overlay">
+      <div class="modal-card game-modal-card glass-panel animate-pop">
+        <div class="modal-header">
+          <h3 id="active-game-title">🎮 Mini Game</h3>
+          <button class="close-modal-btn" id="close-game-modal">&times;</button>
+        </div>
+        <div class="game-viewport" id="game-viewport">
+          <!-- Active Game Render Target -->
+        </div>
+      </div>
+    </div>
+
+    <!-- MODAL: OVER-SCHEDULING CONFLICT RESOLUTION -->
+    <div id="conflict-modal" class="modal-overlay">
+      <div class="modal-card conflict-card glass-panel animate-pop" style="max-width: 460px;">
+        <div class="modal-header">
+          <h3 style="color: var(--accent-pink);">⚠️ Scheduling Overflow Alert</h3>
+          <button class="close-modal-btn" id="close-conflict-modal">&times;</button>
+        </div>
+        <div class="conflict-body" style="text-align: center;">
+          <div class="conflict-alert-icon" style="font-size: 3rem; margin-bottom: 12px;">⏳</div>
+          <h4 id="conflict-title" style="font-size: 1.15rem; font-weight: 800;">You have too many tasks scheduled!</h4>
+          <p id="conflict-message" style="margin-top: 8px; color: var(--text-muted); font-size: 0.92rem; line-height: 1.4;"></p>
+          
+          <div class="conflict-options-list" style="margin-top: 20px; display: flex; flex-direction: column; gap: 12px;">
+            <button class="conflict-opt-btn btn btn-outline btn-block" data-strategy="scale" style="padding: 12px; display: flex; align-items: center; justify-content: flex-start;">
+              <span class="opt-emoji" style="font-size: 1.8rem; min-width: 40px; text-align: center;">📏</span>
+              <div class="opt-text" style="text-align: left; margin-left: 10px;">
+                <strong style="display: block; color: var(--text-main); font-size: 0.92rem;">Scale Durations</strong>
+                <span style="font-size: 0.78rem; color: var(--text-muted); font-weight: 500;">Shorten flexible task durations proportionally to fit available hours.</span>
+              </div>
+            </button>
+            
+            <button class="conflict-opt-btn btn btn-outline btn-block" data-strategy="reduce_breaks" style="padding: 12px; display: flex; align-items: center; justify-content: flex-start;">
+              <span class="opt-emoji" style="font-size: 1.8rem; min-width: 40px; text-align: center;">☕</span>
+              <div class="opt-text" style="text-align: left; margin-left: 10px;">
+                <strong style="display: block; color: var(--text-main); font-size: 0.92rem;">Reduce Breaks & Meals</strong>
+                <span style="font-size: 0.78rem; color: var(--text-muted); font-weight: 500;">Shorten lunch/dinner to 20m and remove flexible study breaks.</span>
+              </div>
+            </button>
+            
+            <button class="conflict-opt-btn btn btn-outline btn-block" data-strategy="priority_only" style="padding: 12px; display: flex; align-items: center; justify-content: flex-start;">
+              <span class="opt-emoji" style="font-size: 1.8rem; min-width: 40px; text-align: center;">🔥</span>
+              <div class="opt-text" style="text-align: left; margin-left: 10px;">
+                <strong style="display: block; color: var(--text-main); font-size: 0.92rem;">Prioritize Top Tasks Only</strong>
+                <span style="font-size: 0.78rem; color: var(--text-muted); font-weight: 500;">Fit High/Urgent tasks first; reschedule Low/Medium tasks for tomorrow.</span>
+              </div>
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- TOAST NOTIFICATION CONTAINER -->
+    <div id="toast-container" class="toast-container"></div>
+
+  </div>
+
+  <!-- Application Modules -->
+  <script type="module" src="js/app.js"></script>
+</body>
+</html>
